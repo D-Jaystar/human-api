@@ -1,0 +1,59 @@
+# ==============================================================================
+# Human API - .gitignore
+# Voorkomt dat gevoelige data, lokale databases en configuraties op GitHub belanden.
+# ==============================================================================
+
+# --- Databases & Backups (Privacy & Persoonlijke telemetry) ---
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+identifier.sqlite
+human_api.db
+backups/
+
+# --- Omgevingsvariabelen & Beveiligingstokens ---
+.env
+.env.*
+*.env
+*.pem
+*.key
+token.txt
+tokens.json
+secrets/
+
+# --- Python Virtual Environments ---
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# --- Python Caches & Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- IDE & Editor instellingen (bevatten gebruikerspaden en lokale data) ---
+.idea/
+*.iml
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# --- Logs & Crashes ---
+*.log
+logs/
+*.bak
+
+# --- Besturingssysteem & Tijdelijke bestanden ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
