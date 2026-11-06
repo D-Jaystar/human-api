@@ -48,6 +48,64 @@ def log_activity(
         return None
 
 
+def get_recent_activities(device_id: str, limit: int = 10) -> list[sqlite3.Row]:
+    with get_db_connection() as conn:
+        cursor = conn.execute(
+            """
+            SELECT * FROM activity_logs WHERE device_id = ? ORDER BY start_time DESC LIMIT ?
+            """,
+                (device_id, limit)
+        )
+        return cursor.fetchall()
+
+
+def log_health_metric(
+        device_id: str,
+        metric_type: str,
+        value: float,
+        recorded_at: str,
+) -> int | None:
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO health_metrics (device_id, metric_type, value, recorded_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (device_id, metric_type, value, recorded_at),
+            )
+            conn.commit()
+            return cursor.lastrowid
+    except sqlite3.Error:
+        return None
+
+
+def get_health_metric(
+        device_id: str,
+        metric_type: str | None = None,
+        limit: int = 10,
+) -> list[sqlite3.Row]:
+    with get_db_connection() as conn:
+        if metric_type:
+            cursor = conn.execute(
+                """
+                SELECT * FROM health_metrics WHERE device_id = ? AND metric_type = ?
+                ORDER BY recorded_at DESC LIMIT ?
+                """,
+                (device_id, metric_type, limit),
+            )
+        else: cursor = conn.execute(
+            """
+            SELECT * FROM health_metrics WHERE device_id = ?
+            ORDER BY recorded_at DESC LIMIT ?
+            """,
+            (device_id, limit),
+
+        )
+        return cursor.fetchall()
+
+
+
 
 
 if __name__ == "__main__":
@@ -62,6 +120,30 @@ if __name__ == "__main__":
     else:
         print("Niet gevonden")
 
-    # Test 3: Activiteit loggen
-    log_id = log_activity("pc-01", "Chrome", "PortSwigger Academy", False, "2026-11-05 23:00", "2026-11-05 23:15", 900)
-    print(f"Log ID: {log_id}")
+if __name__ == "__main__":
+    # Test 1: Activiteit loggen
+    log_id = log_activity(
+        device_id="pc-01",
+        app_name="IntelliJ IDEA",
+        window_title="crud.py - human_api",
+        is_afk=False,
+        start_time="2026-11-05T17:30:00",
+        end_time="2026-11-05T17:40:00",
+        duration_sec=600,
+    )
+    print(f"Activiteit opgeslagen met log ID: {log_id}")
+
+    # Test 2: Recente activiteiten ophalen
+    logs = get_recent_activities("pc-01", limit=5)
+    print(f"Aantal logs opgehaald: {len(logs)}")
+    for log in logs:
+        print(f"- {log['app_name']} | {log['window_title']} ({log['duration_sec']}s)")
+
+    # Test 4: Health metric opslaan
+    health_id = log_health_metric("pc-01", "steps", 8450.0, "2026-11-06T20:30:00")
+    print(f"Health metric opgeslagen met ID: {health_id}")
+
+    # Test 5: Health metrics ophalen (alles)
+    metrics = get_health_metric("pc-01")
+    for m in metrics:
+        print(f"- {m['metric_type']}: {m['value']} op {m['recorded_at']}")
