@@ -1,5 +1,8 @@
 import sqlite3
-from database import get_db_connection
+try:
+    from backend.db.database import get_db_connection
+except ModuleNotFoundError:
+    from database import get_db_connection
 
 
 def register_device(device_id: str, name: str, token_hash: str) -> bool:
