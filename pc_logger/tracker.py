@@ -11,11 +11,6 @@ def get_active_window_info() -> dict[str, str]:
     Leest het actieve voorgrondvenster op Windows uit.
     Geeft een dictionary terug met de applicatienaam en de venstertitel.
 
-    Voorbeeld:
-        {
-            'app_name': 'idea64.exe',
-            'window_title': 'main.py - human_api'
-        }
     """
     # 1. Haal de handle (HWND) op van het venster dat op dit moment focus heeft
     hwnd = user32.GetForegroundWindow()

@@ -32,6 +32,9 @@ class PCLogger:
         self.afk_threshold_sec = afk_threshold_sec
         self.max_block_sec = max_block_sec
 
+        # Status van de logger loop
+        self.is_running: bool = False
+
         # Huidige actieve sessieblok
         self.current_app: str | None = None
         self.current_title: str | None = None
@@ -44,7 +47,7 @@ class PCLogger:
     def send_to_api(self, payload: dict) -> bool:
         """
         Verstuurt een activiteitsblok naar de Human API server met Bearer token.
-        Als de server offline is, wordt het blok in een lokale buffer bewaard.
+        Als de server offline is of een fout geeft, wordt het blok in een lokale buffer bewaard.
         """
         endpoint = f"{self.api_url}/api/activity"
         headers = {
@@ -58,16 +61,11 @@ class PCLogger:
                 if response.status_code == 200:
                     return True
                 print(f"[LOGGER] API fout {response.status_code}: {response.text}")
-                self.offline_queue.append(payload)
-                return False
-        except (httpx.ConnectError, httpx.TimeoutException):
-            print("[LOGGER] Server offline. Activiteit bewaard in lokale buffer.")
-            self.offline_queue.append(payload)
-            return False
         except Exception as e:
-            print(f"[LOGGER] Netwerkfout: {e}")
-            self.offline_queue.append(payload)
-            return False
+            print(f"[LOGGER] Kan niet verzenden ({e}).")
+
+        self.offline_queue.append(payload)
+        return False
 
     def flush_offline_queue(self) -> None:
         """
@@ -124,7 +122,8 @@ class PCLogger:
         }
 
         status_str = "AFK" if self.current_afk else "Actief"
-        print(f"[LOG] {status_str} | {self.current_app} ({duration_sec}s) - {self.current_title[:40]}")
+        title_preview = (self.current_title or "Onbekend")[:40]
+        print(f"[LOG] {status_str} | {self.current_app} ({duration_sec}s) - {title_preview}")
         self.send_to_api(payload)
 
     def step(self) -> None:
@@ -169,17 +168,29 @@ class PCLogger:
     def start(self) -> None:
         """
         Start de continue logging loop.
-        Sluit netjes af met Ctrl+C.
+        Blijft draaien zolang self.is_running True is.
+        Kan netjes gestopt worden via self.stop() of KeyboardInterrupt.
         """
-        print(f"[LOGGER] Gestart voor device '{self.device_id}'. Druk op Ctrl+C om te stoppen.")
+        print(f"[LOGGER] Gestart voor device '{self.device_id}'.")
+        self.is_running = True
         try:
-            while True:
+            while self.is_running:
                 self.step()
                 time.sleep(self.poll_interval)
         except KeyboardInterrupt:
-            print("\n[LOGGER] Afsluiten... Huidige sessie opslaan...")
-            self.flush_current_block()
-            print("[LOGGER] Gestopt. Tot de volgende sessie!")
+            self.stop()
+
+    def stop(self) -> None:
+        """
+        Stopt de actieve logging loop netjes en slaat het huidige blok op.
+        Geschikt voor CLI (Ctrl+C), GUI-events (stop-knop of sluiten venster) en mobiele lifecycle triggers.
+        """
+        if not self.is_running:
+            return
+        print("[LOGGER] Stop-signaal ontvangen. Huidige sessie opslaan...")
+        self.is_running = False
+        self.flush_current_block()
+        print("[LOGGER] Succesvol gestopt.")
 
 
 if __name__ == "__main__":
