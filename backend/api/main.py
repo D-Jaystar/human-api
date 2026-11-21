@@ -150,7 +150,7 @@ def create_health_metric(
         if metric_id is None:
             raise HTTPException(
                 status_code=500,
-                detail="Kon gezondheidsmeting niet opslaan in de database.",
+                detail="Kon gezondheidsmeting niet opslaan",
             )
 
         return {
