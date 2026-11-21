@@ -107,8 +107,8 @@ def create_activity_log(
 
         if log_id is None:
             raise HTTPException(
-                status_code=500,
-                detail="Kon activiteitslog niet opslaan in de database.",
+                status_code=400,
+                detail="Kon activiteit niet uitvoeren.",
             )
 
         return {
@@ -150,13 +150,13 @@ def create_health_metric(
         if metric_id is None:
             raise HTTPException(
                 status_code=500,
-                detail="Kon gezondheidsmeting niet opslaan",
+                detail="Kon gezondheidsmeting niet meten ",
             )
 
         return {
             "status": "success",
             "metric_id": metric_id,
-            "message": "Gezondheidsmeting succesvol opgeslagen.",
+            "message": "Gezondheidsmeting succesvol .",
         }
 
     except HTTPException:
